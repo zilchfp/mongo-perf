@@ -158,7 +158,8 @@ def main():
         args.includeFilter = args.includeFilter[0]
         if args.includeFilter == ['%'] :
             args.includeFilter = '%'
-
+    print("------args.includeFilter :\n")
+    print(args.includeFilter )
     if args.username:
         auth = ["-u", args.username, "-p", args.password, "--authenticationDatabase", "admin"]
     else:
@@ -168,7 +169,7 @@ def main():
           "--host", args.hostname, "--port", args.port,
           "--eval", "print('db version: ' + db.version());"
           " db.serverBuildInfo().gitVersion;"] + auth)
-    print("")
+    print("after check_call")
 
     commands = []
 
@@ -231,13 +232,17 @@ def main():
         mongo_proc = Popen([args.shellpath, "--norc", "--quiet", js_file.name,
                            "--host", args.hostname, "--port", args.port] + auth,
                            stdout=PIPE)
+        print("mongo_proc after")
 
         # Read test output.
         readout = False
         getting_results = False
         got_results = False
         line_results = ""
+        # print("mongo_proc.stdout.readline")
+        # print(mongo_proc.stdout.readline)
         for line in iter(mongo_proc.stdout.readline, ''):
+            print(line)
             line = line.strip()
             if line == "@@@START@@@":
                 readout = True
@@ -258,6 +263,7 @@ def main():
                 line_results += line
 
     print("Finished Testing.")
+    print(line_results)
     results_parsed = json.loads(line_results)
     if args.outfile:
         out = open(args.outfile, 'w')

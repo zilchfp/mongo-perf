@@ -97,7 +97,7 @@ function checkForDroppedCollectionsTestDBs(db, multidb){
         return;
     }
     for (var i = 0; i < multidb; i++) {
-        var sibling_db = db.getSiblingDB('test' + i);
+        var sibling_db = db.getSiblingDB('alex_test' + i);
         var retries = 0;
         while (checkForDroppedCollections(sibling_db) && retries < 1000) {
             print("Sleeping 1 second while waiting for collection to finish dropping")
@@ -269,7 +269,7 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
     if (typeof shard === "undefined") shard = 0;
     if (typeof includeFilter === "undefined") includeFilter = "sanity";
     if (typeof printArgs === "undefined") printArgs = false;
-
+    print("includeFilter:"+includeFilter)
     var collections = [];
 
     var realTracer = new CommandTracer(test.name, mongoeBenchOptions);
@@ -288,7 +288,7 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
         for (var j = 0; j < multicoll; j++) {
             var coll = sibling_db.getCollection(foo + j);
             collections.push(coll);
-            coll.drop();
+            // coll.drop();
         }
     }
 
@@ -383,12 +383,16 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
 
     // Make sure the system is queisced
     // Check for dropped collections
-    checkForDroppedCollectionsTestDBs(db, multidb)
+    var flagToDropCollection = false
+    if (flagToDropCollection) {
+        checkForDroppedCollectionsTestDBs(db, multidb)
+    }
     db.adminCommand({fsync: 1});
 
 
     // invoke the built-in mongo shell function
     var result = benchRun(benchArgs);
+    print(JSON.stringify(result))
 
     var total;
     if ("totalOps/s" in result) {
@@ -423,12 +427,20 @@ function runTest(test, thread, multidb, multicoll, runSeconds, shard, crudOption
     // drop all the collections created by this case
     for (var i = 0; i < multidb; i++) {
         for (var j = 0; j < multicoll; j++) {
+            if (flagToDropCollection) {
+                collections[(multicoll * i) + j].drop();    
             collections[(multicoll * i) + j].drop();
+                collections[(multicoll * i) + j].drop();    
+            }
+            // collections[(multicoll * i) + j].drop();
+            // print("drop:"+collections[(multicoll * i) + j])
         }
     }
 
     // Make sure all collections have been dropped
-    checkForDroppedCollectionsTestDBs(db, multidb)
+    if (flagToDropCollection) {
+        checkForDroppedCollectionsTestDBs(db, multidb)
+    }
 
     return { ops_per_sec: total, error_count : result["errCount"]};
 }
@@ -633,6 +645,8 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
     if (typeof excludeTestbed === "undefined") excludeTestbed = false;
     if (typeof printArgs === "undefined") printArgs = false;
 
+    // print("includeFilter:"+ includeFilter)
+
     var testResults = {};
     testResults.results=[];
 
@@ -657,7 +671,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
     }
 
     // Save storage engine information
-    testResults['storageEngine'] = db.runCommand("serverStatus").storageEngine.name;
+	//testResults['storageEngine'] = db.runCommand("serverStatus").storageEngine.name;
 
     print("@@@START@@@");
     testResults['start'] = new Date();
@@ -738,6 +752,7 @@ function runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilt
  * @returns {{}} the results of a run set of tests
  */
 function mongoPerfRunTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password) {
+    // print(includeFilter)
     testResults = runTests(threadCounts, multidb, multicoll, seconds, trials, includeFilter, excludeFilter, shard, crudOptions, excludeTestbed, printArgs, mongoeBenchOptions, username, password);
     print("@@@RESULTS_START@@@");
     print(JSON.stringify(testResults));

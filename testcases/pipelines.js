@@ -136,7 +136,8 @@ function generateTestCase(options) {
 
     tests.push({
         tags: tagsForTest,
-        name: "Aggregation." + options.name,
+        name: options.name,
+        // name: "Aggregation." + options.name,
         pre: (options.pre !== undefined)
             ? options.pre(!isView)
             : populatorGenerator(!isView,
@@ -149,7 +150,8 @@ function generateTestCase(options) {
             },
         ops: [{
             op: "command",
-            ns: "#B_DB",
+            ns: "#B_COLL",
+            // ns: "#B_DB",
             command: {aggregate: "#B_COLL", pipeline: pipeline, cursor: {}}
         }]
     });
@@ -1158,14 +1160,46 @@ generateTestCase({
 
 generateTestCase({
     name: "CountsFullCollection",
-    tags: ["agg_query_comparison"],
+    tags: ["alex"],
     nDocs: 4800,
     docGenerator: function(i) {
         return {_id: i};
     },
-    pipeline: [{$count: "n"}],
+    pipeline: [
+        {$count: "n"}
+    ],
     addSkipStage: false,
 });
+
+
+var eventName = ["report", "meeting", "advantage"]
+generateTestCase({
+    name: "CountsFullCollection",
+    tags: ["alex1"],
+    nDocs: 1000000,
+    docGenerator: function(i) {
+        return {
+            event_name : eventName[i % 3],  //字符串
+            type : i % 5,                   //数值类型
+            duration : i % 1000             //区分度较大的数值类型
+        } ;
+    },
+    pipeline: [{$match: { "event_name": "report" }}],
+    addSkipStage: false,
+});
+
+
+
+var eventName = ["report", "meeting", "advantage"]
+generateTestCase({
+    name: "Alex.Simple.SimpleKeyValue",
+    tags: ["alex_query"],
+    pipeline: [
+        {$match: { "event_name": "/.*port.*/" }}
+    ],
+    addSkipStage: false,
+});
+
 
 generateTestCase({
     name: "CountsIntIDRange",
